@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+        <title>User Data</title>
+      </head>
+<body>
+    <div class="container">
+        <div id="main" class="card card-body">
+         <h2 class="title">Add User</h2>
+         <form class="form-floating" id="my-form">
+             <div class="form-floating mb-3 mt-3">
+                     <label class="">User Name:</label>
+                     <input type="text" class="form-control" id="name" name="name">
+             </div>
+             <div class="form-floating mb-3 mt-3">
+                 <label class="">User Email:</label>
+                 <input type="text" class="form-control" id="email" name="email">
+             </div>
+             <div class="form-floating mb-3 mt-3">
+                 <label class="">User PhoneNo:</label>
+                 <input type="text" class="form-control" id="phone" name="phone">
+             </div>
+             <div class="form-floating mb-3 mt-3">
+             <input type="submit" class="btn btn-dark">
+             </div>
+        </form>
+       
+  <h1>User List</h1>
+  <ul id="user-list"></ul>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+     document.addEventListener('DOMContentLoaded', async() => {
+    await getUsers();
+  });
+  document.getElementById('my-form').addEventListener('submit', async (event) => {
+    event.preventDefault(); // Prevent default form submission behavior
+
+    const name = event.target.name.value;
+    const email = event.target.email.value;
+    const phone = event.target.phone.value;
+
+    try {
+      // Send a POST request to add a new user
+      await axios.post('http://localhost:3000/api/users', {
+        name,
+        email,
+        phone,
+      }).then((response)=>{
+        getUsers(response);
+      })
+
+      // Clear the form fields after successful submission
+      document.getElementById('name').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('phone').value = '';
+
+      // Refresh the user list
+    //   getUsers();
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
+  async function getUsers() {
+  try {
+    const response = await axios.get('http://localhost:3000/api/users');
+    const userList = document.getElementById('user-list');
+
+    // Clear existing content
+    userList.innerHTML = '';
+
+    response.data.forEach(user => {
+      const li = document.createElement('li');
+      li.appendChild(document.createTextNode(`${user.name} - ${user.email} - ${user.phone}`));
+
+      // Create delete button
+      const btnDelete = document.createElement('button');
+      btnDelete.textContent = 'Delete';
+      btnDelete.addEventListener('click', () => deleteUser(user.id)); // Assuming there's an 'id' field in your user model
+      li.appendChild(btnDelete);
+
+      // Create edit button
+      const btnEdit = document.createElement('button');
+      btnEdit.textContent = 'Edit';
+      btnEdit.addEventListener('click', () => editUser(user.id)); // Implement editUser function as needed
+      li.appendChild(btnEdit);
+
+      userList.appendChild(li);
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+    async function deleteUser(userId) {
+    try {
+      await axios.delete(`http://localhost:3000/api/users/${userId}`);
+      getUsers(); // Refresh the user list after deletion
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async function editUser(userId) {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/users/${userId}`);
+      const user = response.data;
+
+      // Populate the form fields with the user's current data
+      document.getElementById('name').value = user.name;
+      document.getElementById('email').value = user.email;
+      document.getElementById('phone').value = user.phone;
+      // Change the form's submit event to update the user instead of adding a new one
+      document.getElementById('my-form').removeEventListener('submit', handleAddUser);
+      document.getElementById('my-form').addEventListener('submit', (event) => handleEditUser(event, userId));
+
+      // Update the form title
+      document.getElementById('form-title').textContent = 'Edit User';
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // Function to handle user editing submission
+  async function handleEditUser(event, userId) {
+    event.preventDefault();
+
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+
+    try {
+      // Send a PUT request to update the user
+      await axios.put(`http://localhost:3000/api/users/${userId}`, {
+        name,
+        email,
+        phone,
+      });
+      document.getElementById('my-form').reset();
+
+// Change the form's submit event back to adding a new user
+document.getElementById('my-form').removeEventListener('submit', handleEditUser);
+document.getElementById('my-form').addEventListener('submit', handleAddUser);
+
+// Update the form title back to "Add User"
+document.getElementById('form-title').textContent = 'Add User';
+
+// Refresh the user list
+ getUsers();
+} catch (error) {
+console.error(error);
+}
+} 
+  </script>
+  </div>
+</div>
+</body>
+</html>
